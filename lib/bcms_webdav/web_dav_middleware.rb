@@ -6,17 +6,17 @@ module Bcms
 
     def initialize(app, options={})
       @app = app
-      @dav4rack = DAV4Rack::Handler.new(:root => Rails.root.to_s, :root_uri_path => '/', :log_to => [STDERR, Logger::DEBUG])
+      @dav4rack = DAV4Rack::Handler.new(:root => Rails.root.to_s, :root_uri_path => '/', :log_to => [STDERR, Logger::DEBUG], :resource_class=>Bcms::WebDAV::Resource)
       @options = options
     end
 
     def call(env)
       request = Rack::Request.new(env)
       if is_webdav?(request)
-        log "WebDAV Request: For path '#{request.path}'"
+#        log "WebDAV Request: For path '#{request.path}'"
         return @dav4rack.call(env)
       else
-        log("Not a WebDAV request '#{request.path}'")
+#        log("Not a WebDAV request '#{request.path}'")
         @app.call(env)
       end
     end
