@@ -8,6 +8,7 @@ class WebDavSectionResourceTest < ActiveSupport::TestCase
     @request.expects(:ip).returns('').at_least_once
     @about_us = Section.create!(:name=>"About Us", :path=>"/about-us", :parent=>Section.root.first)
     @resource = resource_for("/about-us")
+    @resource.exist?
   end
 
   def teardown
@@ -61,8 +62,22 @@ class WebDavSectionResourceTest < ActiveSupport::TestCase
   end
 
 
+  test "propfind ensures all resources are initialized when getting properties" do
+    child_section = Section.create!(:name=>"Child 1", :path=>"/about-us/child1", :parent=>@about_us)
+    child_page = Page.create!(:name=>"Child 2", :path=>"/about-us/child2", :section=>@about_us)
+    resource = resource_for("/about-us")
+    children = resource.children
+
+    assert_about_same_time child_section.created_at, children[0].creation_date
+    assert_about_same_time child_page.created_at, children[1].creation_date
+  end
+
+  def assert_about_same_time(expected, actual)
+    assert expected - actual <= 100, "Ensure the times are close"
+  end
   test "creation_date" do
     resource = resource_for("/about-us")
+    resource.exist?
     assert @about_us.created_at - resource.creation_date <= 100, "Ensure the times are close"
   end
 
@@ -107,6 +122,8 @@ class PageResourceTest < ActiveSupport::TestCase
     @about_us = Section.create!(:name=>"About Us", :path=>"/about-us", :parent=>Section.root.first)
     @contact_us = Page.create!(:name=>"Contact Us", :path=>"/about-us/contact_us", :section=>@about_us)
     @resource = resource_for("/about-us/contact_us")
+    @resource.exist?
+
   end
 
   test "exists" do
@@ -125,6 +142,7 @@ class PageResourceTest < ActiveSupport::TestCase
     assert_equal false, @resource.collection?
   end
 
+
   private
   def resource_for(path)
     Bcms::WebDAV::Resource.new(path, path, @request, Rack::MockResponse.new(200, {}, []), {})
@@ -140,11 +158,13 @@ class FileResourceTest < ActiveSupport::TestCase
     @about_us = Section.create!(:name=>"About Us", :path=>"/about-us", :parent=>Section.root.first)
 
     @file = file_upload_object(:original_filename => "test.jpg",
-      :content_type => "image/jpeg", :rewind => true,
-      :size => "99", :read => "01010010101010101")
-    @file_block =  FileBlock.create!(:name=>"Testing",:attachment_file => @file, :attachment_section => @about_us, :attachment_file_path => "/about-us/test.jpg", :publish_on_save => true)
+                               :content_type => "image/jpeg", :rewind => true,
+                               :size => "99", :read => "01010010101010101")
+    @file_block = FileBlock.create!(:name=>"Testing", :attachment_file => @file, :attachment_section => @about_us, :attachment_file_path => "/about-us/test.jpg", :publish_on_save => true)
 
     @resource = resource_for("/about-us/test.jpg")
+    @resource.exist?
+
   end
 
   test "exists" do
@@ -189,6 +209,47 @@ class FileResourceTest < ActiveSupport::TestCase
     assert_equal "/about-us/test.jpg", @section.children.first.path
   end
 
+
+  test "determine target_section" do
+    path = Bcms::WebDAV::Path.new('/about-us/test.jpg')
+    assert_equal "test.jpg", path.file_name
+    assert_equal '/about-us/', path.path_without_filename
+
+    assert_equal @about_us, @resource.find_section_for("/about-us/test.jpg")
+  end
+
+  test "Uploading files with spaces or special characters" do
+    path = Bcms::WebDAV::Path.new('/about-us/test with spaces.jpg')
+    assert_equal "test_with_spaces.jpg", path.file_name
+    assert_equal '/about-us/', path.path_without_filename
+
+    assert_equal @about_us, @resource.find_section_for("/about-us/test with spaces.jpg")
+  end
+  test "Uploading files with encoded spaces" do
+    path = Bcms::WebDAV::Path.new('/about-us/test%20with%20spaces.jpg')
+    assert_equal "test_with_spaces.jpg", path.file_name
+    assert_equal '/about-us/', path.path_without_filename
+
+    assert_equal @about_us, @resource.find_section_for("/about-us/test with spaces.jpg")
+  end
+
+  test "uploading files to root section" do
+    assert_equal Section.root.first, @resource.find_section_for("/test.jpg")
+  end
+
+  test "parse empty section" do
+    path = Bcms::WebDAV::Path.new('/test.jpg')
+    assert_equal "test.jpg", path.file_name
+
+
+  end
+
+  test "parse missing slash section" do
+    path = Bcms::WebDAV::Path.new('test.jpg')
+    assert_equal "test.jpg", path.file_name
+
+
+  end
   private
   def resource_for(path)
     Bcms::WebDAV::Resource.new(path, path, @request, @response, {})
