@@ -131,3 +131,54 @@ class PageResourceTest < ActiveSupport::TestCase
   end
 end
 
+class FileResourceTest < ActiveSupport::TestCase
+  def setup
+    @mock_request = stub()
+    @mock_request.expects(:ip).returns('').at_least_once
+    @about_us = Section.create!(:name=>"About Us", :path=>"/about-us", :parent=>Section.root.first)
+
+    @file = file_upload_object(:original_filename => "test.jpg",
+      :content_type => "image/jpeg", :rewind => true,
+      :size => "99", :read => "01010010101010101")
+    @file_block =  FileBlock.create!(:name=>"Testing",:attachment_file => @file, :attachment_section => @about_us, :attachment_file_path => "/about-us/test.jpg", :publish_on_save => true)
+
+    @resource = resource_for("/about-us/test.jpg")
+  end
+
+  test "exists" do
+    assert_equal true, @resource.exist?
+  end
+
+  test "creation_date" do
+    assert @file_block.created_at - @resource.creation_date <= 100, "Ensure the times are close"
+  end
+
+  test "last_modified" do
+    assert @file_block.updated_at - @resource.last_modified <= 100, "Ensure the times are close"
+  end
+
+  test "pages are not collections" do
+    assert_equal false, @resource.collection?
+  end
+
+  test "file size is correct" do
+    assert_equal @file.size, @resource.content_length
+  end
+
+  test "content_type matches underlying file type" do
+    assert_equal @file.content_type, @resource.content_type
+  end
+
+  test "Finding a section includes child files as resources" do
+    @section = resource_for("/about-us")
+    assert_equal 1, @section.children.size
+    assert_equal "/about-us/test.jpg", @section.children.first.path
+  end
+
+  private
+  def resource_for(path)
+    Bcms::WebDAV::Resource.new(path, path, @mock_request, Rack::MockResponse.new(200, {}, []), {})
+  end
+end
+
+

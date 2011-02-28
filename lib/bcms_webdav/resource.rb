@@ -12,12 +12,26 @@ module Bcms
 
         path_to_find = Resource.normalize_path(path)
         @section = Section.with_path(path_to_find).first
-        log "Checking to see if section with path '#{path_to_find}' exists: #{have_section}"
+        log "Checking to see if section with path '#{path_to_find}'"
+
+        if have_section
+          @resource = @section if have_section
+          return self
+        end
 
         @page = Page.with_path(path_to_find).first
-        log "Have page w/ path '#{path_to_find}' #{have_page}."
-        @resource = @section if have_section
-        @resource = @page if have_page
+        log "Have page w/ path '#{path_to_find}'."
+        if have_page
+          @resource = @page
+          return self
+        end
+
+        @file = Attachment.find_by_file_path(path)
+        log "Found file w/ path '#{path_to_find}'."
+        if have_file
+          @resource = @file
+          return self
+        end
       end
 
 
@@ -43,9 +57,12 @@ module Bcms
         @page != nil
       end
 
-      def exist?
-        return have_section || have_page
+      def have_file
+        @file != nil
+      end
 
+      def exist?
+        return have_section || have_page || have_file
       end
 
       def children
@@ -78,11 +95,11 @@ module Bcms
       end
 
       def content_type
-        "text/html"
+        have_file ? @resource.file_type : "text/html"
       end
 
       def content_length
-        0
+        have_file ? @resource.file_size : 0
       end
 
       def get(request, response)
@@ -104,8 +121,5 @@ module Bcms
       end
     end
 
-    class SectionResource < Bcms::WebDAV::Resource
-
-    end
   end
 end

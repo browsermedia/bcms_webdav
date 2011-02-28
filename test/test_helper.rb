@@ -26,7 +26,7 @@ class ActiveSupport::TestCase
   # test cases which use the @david style and don't mind the speed hit (each
   # instantiated fixtures translates to a database query per test method),
   # then set this back to true.
-  self.use_instantiated_fixtures  = false
+  self.use_instantiated_fixtures = false
 
   # Setup all fixtures in test/fixtures/*.(yml|csv) for all tests in alphabetical order.
   #
@@ -37,3 +37,10 @@ class ActiveSupport::TestCase
   # Add more helper methods to be used by all tests here...
 end
 
+def file_upload_object(options)
+  file = ActionController::UploadedTempfile.new(options[:original_filename])
+  open(file.path, 'w') { |f| f << options[:read] }
+  file.original_path = options[:original_filename]
+  file.content_type = options[:content_type]
+  file
+end

@@ -1,0 +1,3 @@
+== WebDAV
+
+Allow access to a BrowserCMS project via WebDAV.
