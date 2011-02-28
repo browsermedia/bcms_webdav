@@ -103,7 +103,14 @@ module Bcms
       end
 
       def get(request, response)
-        log "request for #{request.path}"
+        log "GET request for #{request.path}"
+        if have_file
+          file_location = @resource.full_file_location
+          log "For attachment '#{@resource}' file location is '#{file_location}"
+          file = Bcms::WebDAV::File.new(file_location)
+          log "Sending file '#{file.path}'"
+          response.body = file
+        end
       end
 
       private

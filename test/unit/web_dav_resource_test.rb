@@ -4,8 +4,8 @@ require 'mocha'
 class WebDavSectionResourceTest < ActiveSupport::TestCase
 
   def setup
-    @mock_request = stub()
-    @mock_request.expects(:ip).returns('').at_least_once
+    @request = stub()
+    @request.expects(:ip).returns('').at_least_once
     @about_us = Section.create!(:name=>"About Us", :path=>"/about-us", :parent=>Section.root.first)
     @resource = resource_for("/about-us")
   end
@@ -94,7 +94,7 @@ class WebDavSectionResourceTest < ActiveSupport::TestCase
   private
 
   def resource_for(path)
-    Bcms::WebDAV::Resource.new(path, path, @mock_request, Rack::MockResponse.new(200, {}, []), {})
+    Bcms::WebDAV::Resource.new(path, path, @request, Rack::MockResponse.new(200, {}, []), {})
   end
 
 
@@ -102,8 +102,8 @@ end
 
 class PageResourceTest < ActiveSupport::TestCase
   def setup
-    @mock_request = stub()
-    @mock_request.expects(:ip).returns('').at_least_once
+    @request = stub()
+    @request.expects(:ip).returns('').at_least_once
     @about_us = Section.create!(:name=>"About Us", :path=>"/about-us", :parent=>Section.root.first)
     @contact_us = Page.create!(:name=>"Contact Us", :path=>"/about-us/contact_us", :section=>@about_us)
     @resource = resource_for("/about-us/contact_us")
@@ -127,14 +127,16 @@ class PageResourceTest < ActiveSupport::TestCase
 
   private
   def resource_for(path)
-    Bcms::WebDAV::Resource.new(path, path, @mock_request, Rack::MockResponse.new(200, {}, []), {})
+    Bcms::WebDAV::Resource.new(path, path, @request, Rack::MockResponse.new(200, {}, []), {})
   end
 end
 
 class FileResourceTest < ActiveSupport::TestCase
   def setup
-    @mock_request = stub()
-    @mock_request.expects(:ip).returns('').at_least_once
+    @request = stub()
+    @request.expects(:ip).returns('').at_least_once
+
+    @response = Rack::MockResponse.new(200, {}, [])
     @about_us = Section.create!(:name=>"About Us", :path=>"/about-us", :parent=>Section.root.first)
 
     @file = file_upload_object(:original_filename => "test.jpg",
@@ -169,6 +171,18 @@ class FileResourceTest < ActiveSupport::TestCase
     assert_equal @file.content_type, @resource.content_type
   end
 
+  test "Getting a file" do
+    mock_rack_file = mock()
+    mock_rack_file.expects(:path).returns("").at_least_once
+    Bcms::WebDAV::File.expects(:new).with(@file_block.attachment.full_file_location).returns(mock_rack_file)
+
+    @request.expects(:path).returns("/about-us/test.jpg").at_least_once
+    @response.expects(:body=).with(mock_rack_file)
+
+    @resource.get(@request, @response)
+
+  end
+
   test "Finding a section includes child files as resources" do
     @section = resource_for("/about-us")
     assert_equal 1, @section.children.size
@@ -177,7 +191,7 @@ class FileResourceTest < ActiveSupport::TestCase
 
   private
   def resource_for(path)
-    Bcms::WebDAV::Resource.new(path, path, @mock_request, Rack::MockResponse.new(200, {}, []), {})
+    Bcms::WebDAV::Resource.new(path, path, @request, @response, {})
   end
 end
 
