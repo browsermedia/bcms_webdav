@@ -1,7 +1,7 @@
 module Bcms
   module WebDAV
 
-    # Overrides Rack File in order to change where paths are looked up from, since the
+    # Inherits from Rack File in order to change where paths are looked up from, since the
     # public path of CMS files is different that actual file path.
     class File < Rack::File
 

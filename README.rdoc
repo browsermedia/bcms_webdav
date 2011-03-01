@@ -1,9 +1,10 @@
 == WebDAV
 
 Allow access to a BrowserCMS site via WebDAV. The primary intent of this module currently is to allow bulk upload of files using an FTP client.
- Clients which support WebDAV in addition to FTP may be used to review and upload/download Files. This module is implemented as
- as Rack Middleware.
+Clients which support WebDAV in addition to FTP may be used to review and upload/download Files. This module is implemented as
+as Rack Middleware.
 
+For more information on WebDAV see: http://en.wikipedia.org/wiki/WebDAV
 
 === Features
 
@@ -25,11 +26,14 @@ servers via mounted drives. See: http://en.wikipedia.org/wiki/WebDAV for more di
 
 === Installation
 
+Due to the dependancy on rack 1.1.0 or later, this gem only works with a Rails 2.3.11 project, so you may need to upgrade older rails projects before using.
+
     gem install bcms_webdav
 
 Add the gem to your project.
 
     # config/environment.rb
+    config.gem 'dav4rack'
     config.gem 'bcms_webdav'
 
 Add the following file to your project.
@@ -37,12 +41,12 @@ Add the following file to your project.
     # config/initializers/bcms_webdav.rb
     Rails.configuration.middleware.use Bcms::WebDavMiddleware, :port=>3001
 
-This configures WebDAV server to listen on port 3001 for WeDAV requests in development. To access the WebDAV API,
+This configures the WebDAV server to listen on port 3001 for WeDAV requests in development. To access the WebDAV API,
 you will need to start another rails server instance like so:
 
     script/server --port=3001
 
-In production, the subdomain should be used rather than a port. You will need to configure another subdomain on your webserver, much like the cms.
+In production, a subdomain should be used rather than a port. You will need to configure another subdomain on your webserver, much like the cms.
 subdomain is used for the admin interface. The default subdomain is 'webdav'. Here's an example apache config file, with a new subdomain configured:
 
      <VirtualHost *:80>
@@ -83,13 +87,19 @@ Then configure the module so its no longer listening on port 3001, like so:
 
 Now you can make web requests to localhost:3000 and WebDAV requests to webdav.localhost:3000
 
-==== Notes
+== Notes
 
 This is an incomplete implementation of WebDAV, so many operations are not explicitly supported, such as:
 
 * Moving - Users cannot move files or pages.
 * Get/Put Pages/sections - Users can't download or upload pages or sections.
 * Edit/Create Pages/section - Users can't edit/rename or create new sections.
+
+== Known Issues
+
+* All files are uploaded as 'FileBlocks', regardless of whether they are images or not.
+* All content_types are set to 'application/octet-stream' regardless of their actual type.
+* This m
 
 === Performance
 
