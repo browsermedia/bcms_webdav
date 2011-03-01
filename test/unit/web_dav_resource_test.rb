@@ -15,6 +15,30 @@ class WebDavSectionResourceTest < ActiveSupport::TestCase
 
   end
 
+  test 'users with administrate permissions can access resources' do
+    mock_user = mock()
+    User.expects(:authenticate).with("abc", "123").returns(mock_user)
+    mock_user.expects(:able_to?).with(:administrate).returns(true)
+
+    assert_equal true, @resource.authenticate("abc", "123")
+  end
+
+  test "users without administrate can't access resources" do
+    mock_user = mock()
+    User.expects(:authenticate).with("abc", "123").returns(mock_user)
+    mock_user.expects(:able_to?).with(:administrate).returns(false)
+
+    assert_equal false, @resource.authenticate("abc", "123")
+
+  end
+
+  test "need a user account to access resource" do
+    mock_user = mock()
+    User.expects(:authenticate).with("abc", "123").returns(nil)
+
+    assert_equal false, @resource.authenticate("abc", "123")
+  end
+
   test "convert webdav paths to cms paths" do
     assert_equal "/", Bcms::WebDAV::Resource.normalize_path("/")
     assert_equal "/", Bcms::WebDAV::Resource.normalize_path("")

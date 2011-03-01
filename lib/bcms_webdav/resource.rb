@@ -23,6 +23,18 @@ module Bcms
 
       end
 
+
+      def authenticate(username, password)
+        log "Authenticating user '#{username}'"
+        user = User.authenticate(username, password)
+
+        unless user
+          Rails.logger.error "Failed authentication attempt by user '#{username}'"
+          return false
+        end
+        user.able_to?(:administrate)
+      end
+
       def have_section
         @section != nil
       end
@@ -35,31 +47,31 @@ module Bcms
         @file != nil
       end
 
-      # This will always be called by DAV4Rack controller before any other method
+
+
+      # This should always be called by DAV4Rack controller before any other primary operation (get, put) on a resource.
       def exist?
         path_to_find = Resource.normalize_path(path)
         @section = Section.with_path(path_to_find).first
 
         if have_section
-          log "Have a section with path '#{path_to_find}'"
+          log_exists('section', path_to_find)
           @resource = @section if have_section
-#          return self
         end
 
         @page = Page.with_path(path_to_find).first
         if have_page
-          log "Have page w/ path '#{path_to_find}'."
+          log_exists('page', path_to_find)
           @resource = @page
-#          return self
         end
 
         @file = Attachment.find_by_file_path(path)
         if have_file
-          log "Found file w/ path '#{path_to_find}'."
+          log_exists('file', path_to_find)
           @resource = @file
         end
 
-        return have_section || have_page || have_file
+        have_section || have_page || have_file
       end
 
       def children
@@ -141,6 +153,10 @@ module Bcms
       end
 
       private
+
+      def log_exists(type, path)
+        log "Resource of type '#{type}' with path '#{path}' exists."
+      end
 
       # Make this TempFile object act like a RailsTempFile
       def add_rails_like_methods(temp_file)
