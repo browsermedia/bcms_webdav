@@ -43,7 +43,7 @@ class WebDavMiddlewareTest < ActiveSupport::TestCase
   end
 
   test "Setting up to use a port for detection for webdav requests" do
-    webdav = Bcms::WebDavMiddleware.new(nil, {:on_port=>3000})
+    webdav = Bcms::WebDavMiddleware.new(nil, {:port=>3000})
     @request.expects(:port).returns(3000)
     assert_equal true, webdav.send(:is_webdav?, @request)
   end

@@ -27,7 +27,7 @@ module Bcms
 
     # A request is WebDAV if it matches either the port or subdomain (exactly).
     def is_webdav?(request)
-      return true if @options[:on_port] && request.port == @options[:on_port]
+      return true if @options[:port] && request.port == @options[:port]
       return true if request.host.starts_with?("#{@options[:subdomain]}.")
       false
     end

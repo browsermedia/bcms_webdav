@@ -4,12 +4,14 @@ Allow access to a BrowserCMS site via WebDAV. The primary intent of this module 
  Clients which support WebDAV in addition to FTP may be used to review and upload/download Files. This module is implemented as
  as Rack Middleware.
 
+
 === Features
 
 * Authorized users can list pages, sections and files that exist in the content library.
 * Authorized users can download files via WebDAV.
 * Authorized users can upload files via WebDAV.
 * Users must have 'Administer CMS' permissions in order to access resources via WebDAV.
+* Users can use their normal cms username and password.
 
 === Clients
 
@@ -25,18 +27,23 @@ servers via mounted drives. See: http://en.wikipedia.org/wiki/WebDAV for more di
 
     gem install bcms_webdav
 
+Add the gem to your project.
+
+    # config/environment.rb
+    config.gem 'bcms_webdav'
+
 Add the following file to your project.
 
     # config/initializers/bcms_webdav.rb
-    Rails.configuration.middleware.use Bcms::WebDavMiddleware, :on_port=>3000
+    Rails.configuration.middleware.use Bcms::WebDavMiddleware, :port=>3001
 
-This configures WebDAV server to listen on port 3000 for WeDAV requests in development. That means in development, if you want to access the normal BrowserCMS
-web interface, you will need to start another webrick instance like so:
+This configures WebDAV server to listen on port 3001 for WeDAV requests in development. To access the WebDAV API,
+you will need to start another rails server instance like so:
 
     script/server --port=3001
 
-In production, the subdomain is used rather than a port. This means another subdomain will need to be configured on your webserver, much like the cms.
-subdomain is used for the admin. The default subdomain is 'webdav'. Here's an example apache config file, with a new subdomain configured:
+In production, the subdomain should be used rather than a port. You will need to configure another subdomain on your webserver, much like the cms.
+subdomain is used for the admin interface. The default subdomain is 'webdav'. Here's an example apache config file, with a new subdomain configured:
 
      <VirtualHost *:80>
       ServerName webdav.mysite.com
@@ -53,25 +60,28 @@ This means there should be a total of three domains in place for a site in produ
 * cms - Site access for administrators
 * webdav - Site access via WebDAV
 
-==== Alternate Configuration
+==== Alternate Subdomains
 
 You can change the subdomain that this module listens for requests on via:
 
     # config/initializers/bcms_webdav.rb
-    Rails.configuration.middleware.use Bcms::WebDavMiddleware, :on_port=>3000, :subdomain=>"dav"
+    Rails.configuration.middleware.use Bcms::WebDavMiddleware, :port=>3001, :subdomain=>"dav"
 
 This would change the subdomain from 'webdav' to 'dav'. This webserver config file would also need to be changed as well.
 
-You can also modify your 'hosts' file to make 'webdav.localhost' map to your local development environment, like so:
+==== Subdomains in Development
+
+Rather than run two server instances locally, you can take advantage of subdomains. Start by modifying your 'hosts' file to
+make 'webdav.localhost' map to your local development environment, like so:
 
     127.0.0.1 webdav.localhost
 
-Then configure the module so its no longer listening on port 3000, like so:
+Then configure the module so its no longer listening on port 3001, like so:
 
     # config/initializers/bcms_webdav.rb
     Rails.configuration.middleware.use Bcms::WebDavMiddleware
 
-The benefit of this, is that you no longer need to run two webrick instances in development.
+Now you can make web requests to localhost:3000 and WebDAV requests to webdav.localhost:3000
 
 ==== Notes
 
