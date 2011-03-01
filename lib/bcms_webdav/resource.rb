@@ -138,7 +138,6 @@ module Bcms
           end
           return
         end
-        log OK.class
         OK
       end
 

@@ -1,3 +1,74 @@
 == WebDAV
 
-Allow access to a BrowserCMS project via WebDAV.
+Allow access to a BrowserCMS site via WebDAV. The primary intent of this module currently is to allow bulk upload of files using an FTP client.
+ Clients which support WebDAV in addition to FTP may be used to review and upload/download Files. This module is implemented as
+ as Rack Middleware.
+
+=== Setup
+
+    gem install bcms_webdav
+
+Add the following file to your project.
+
+    # config/initializers/bcms_webdav.rb
+    Rails.configuration.middleware.use Bcms::WebDavMiddleware, :on_port=>3000
+
+This configures WebDAV server to listen on port 3000 for WeDAV requests in development. That means in development, if you want to access the normal BrowserCMS
+web interface, you will need to start another webrick instance like so:
+
+    script/server --port=3001
+
+In production, the subdomain is used rather than a port. This means another subdomain will need to be configured on your webserver, much like the cms.
+subdomain is used for the admin. The default subdomain is 'webdav'. Here's an example apache config file, with a new subdomain configured:
+
+     <VirtualHost *:80>
+      ServerName webdav.mysite.com
+      DocumentRoot "/var/sites/mysite/public"
+      RailsEnv production
+      <directory "/var/sites/mysite/public">
+        Order allow,deny
+        Allow from all
+      </directory>
+    </VirtualHost>
+
+This means there should be a total of three domains in place for a site in production:
+* www - Main site accessed by the public
+* cms - Site access for administrators
+* webdav - Site access via WebDAV
+
+You can change the subdomain that this module listens for requests on via:
+
+    # config/initializers/bcms_webdav.rb
+    Rails.configuration.middleware.use Bcms::WebDavMiddleware, :on_port=>3000, :subdomain=>"dav"
+
+This would change the subdomain from 'webdav' to 'dav'. This webserver config file would also need to be changed as well.
+
+=== Features
+
+* Authorized users can list pages, sections and files that exist in the content library.
+* Authorized users can download files via WebDAV.
+* Authorized users can upload files via WebDAV.
+* Users must have 'Administer CMS' permissions in order to access resources via WebDAV.
+
+=== Clients
+
+In order to take advantage of this module, users will need a WebDAV client. Many FTP clients will support this, including:
+
+* Transmit (Mac OS) -  http://panic.com/transmit/
+* CrossFTP Pro (Windows, etc) - http://www.crossftp.com/
+
+This module has been tested with both of the above client. In addition, operating systems support accessing WebDAV
+servers via mounted drives. See: http://en.wikipedia.org/wiki/WebDAV for more discussion.
+
+==== Notes
+
+This is an incomplete implementation of WebDAV, so many operations are not explicitly supported, such as:
+
+* Moving - Users cannot move files or pages.
+* Get/Put Pages/sections - Users can't download or upload pages or sections.
+* Edit/Create Pages/section - Users can't edit/rename or create new sections.
+
+=== Performance
+
+This module almost certainly needs performance testing when dealing with larger sites. Certain FTP clients will make more requests for
+resources than others. (CrossFTP seems 'chattier' than Transmit for instance).

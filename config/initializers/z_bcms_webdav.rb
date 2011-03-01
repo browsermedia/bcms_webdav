@@ -1,0 +1,1 @@
+Rails.configuration.middleware.use Bcms::WebDavMiddleware, :on_port=>3000
