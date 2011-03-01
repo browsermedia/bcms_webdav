@@ -8,24 +8,30 @@ module Bcms
       @app = app
       @dav4rack = DAV4Rack::Handler.new(:root => Rails.root.to_s, :root_uri_path => '/', :log_to => [STDERR, Logger::DEBUG], :resource_class=>Bcms::WebDAV::Resource)
       @options = options
+
+      unless @options[:subdomain]
+        @options[:subdomain] = 'webdav'
+      end
     end
 
     def call(env)
       request = Rack::Request.new(env)
       if is_webdav?(request)
-#        log "WebDAV Request: For path '#{request.path}'"
         return @dav4rack.call(env)
       else
-#        log("Not a WebDAV request '#{request.path}'")
         @app.call(env)
       end
     end
 
+    private
+
+    # A request is WebDAV if it matches either the port or subdomain (exactly).
     def is_webdav?(request)
       return true if @options[:on_port] && request.port == @options[:on_port]
-      path = request.path
-      return path == "/public" || path.starts_with?("/public/")
+      return true if request.host.starts_with?("#{@options[:subdomain]}.")
+      false
     end
+
 
     def log(message)
       Rails.logger.warn message

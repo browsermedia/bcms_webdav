@@ -4,7 +4,24 @@ Allow access to a BrowserCMS site via WebDAV. The primary intent of this module 
  Clients which support WebDAV in addition to FTP may be used to review and upload/download Files. This module is implemented as
  as Rack Middleware.
 
-=== Setup
+=== Features
+
+* Authorized users can list pages, sections and files that exist in the content library.
+* Authorized users can download files via WebDAV.
+* Authorized users can upload files via WebDAV.
+* Users must have 'Administer CMS' permissions in order to access resources via WebDAV.
+
+=== Clients
+
+In order to take advantage of this module, users will need a WebDAV client. Many FTP clients will support this, including:
+
+* Transmit (Mac OS) -  http://panic.com/transmit/
+* CrossFTP Pro (Windows, etc) - http://www.crossftp.com/
+
+This module has been tested with both of the above client. In addition, operating systems support accessing WebDAV
+servers via mounted drives. See: http://en.wikipedia.org/wiki/WebDAV for more discussion.
+
+=== Installation
 
     gem install bcms_webdav
 
@@ -36,6 +53,8 @@ This means there should be a total of three domains in place for a site in produ
 * cms - Site access for administrators
 * webdav - Site access via WebDAV
 
+==== Alternate Configuration
+
 You can change the subdomain that this module listens for requests on via:
 
     # config/initializers/bcms_webdav.rb
@@ -43,22 +62,16 @@ You can change the subdomain that this module listens for requests on via:
 
 This would change the subdomain from 'webdav' to 'dav'. This webserver config file would also need to be changed as well.
 
-=== Features
+You can also modify your 'hosts' file to make 'webdav.localhost' map to your local development environment, like so:
 
-* Authorized users can list pages, sections and files that exist in the content library.
-* Authorized users can download files via WebDAV.
-* Authorized users can upload files via WebDAV.
-* Users must have 'Administer CMS' permissions in order to access resources via WebDAV.
+    127.0.0.1 webdav.localhost
 
-=== Clients
+Then configure the module so its no longer listening on port 3000, like so:
 
-In order to take advantage of this module, users will need a WebDAV client. Many FTP clients will support this, including:
+    # config/initializers/bcms_webdav.rb
+    Rails.configuration.middleware.use Bcms::WebDavMiddleware
 
-* Transmit (Mac OS) -  http://panic.com/transmit/
-* CrossFTP Pro (Windows, etc) - http://www.crossftp.com/
-
-This module has been tested with both of the above client. In addition, operating systems support accessing WebDAV
-servers via mounted drives. See: http://en.wikipedia.org/wiki/WebDAV for more discussion.
+The benefit of this, is that you no longer need to run two webrick instances in development.
 
 ==== Notes
 
