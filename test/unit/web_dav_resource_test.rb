@@ -145,6 +145,11 @@ class WebDavSectionResourceTest < ActiveSupport::TestCase
     assert_equal 0, @resource.children.size
 
   end
+  
+  test "Section_nodes will nil values shouldn't throw errors" do
+
+    assert_equal nil, @resource.send(:child_node, SectionNode.new(:section=>@about_us, :node=>nil))
+  end
 
   private
 

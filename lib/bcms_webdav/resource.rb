@@ -178,7 +178,7 @@ module Bcms
 
       def child_node(section_node)
         node_object = section_node.node
-        return nil if node_object && node_object.is_a?(Link)
+        return nil if node_object == nil || node_object.is_a?(Link)
         child_node = self.class.new(node_object.path, node_object.path, request, response, options.merge(:user => @user))
         child_node.exist? # Force lookup of info from DB.
         child_node
