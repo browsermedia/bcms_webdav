@@ -99,7 +99,7 @@ This is an incomplete implementation of WebDAV, so many operations are not expli
 
 * All files are uploaded as 'FileBlocks', regardless of whether they are images or not.
 * All content_types are set to 'application/octet-stream' regardless of their actual type.
-* This m
+* Links do not appear in the list of content items returned.
 
 === Performance
 

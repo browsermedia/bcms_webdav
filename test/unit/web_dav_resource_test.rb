@@ -129,6 +129,22 @@ class WebDavSectionResourceTest < ActiveSupport::TestCase
     assert_equal 0, @resource.content_length
   end
 
+  test "links should not appear in the list, and should not be considered as resources" do
+
+    link = Link.new(:name=>'A', :url=>"www.google.com")
+    link.section = @about_us
+
+
+    assert_equal @about_us.id, link.section_id
+    assert_equal @about_us, link.section_node.section
+    assert_equal @about_us.id, link.section_node.section_id
+    link.save!
+
+    @resource = resource_for("/about-us")
+    assert_equal true, @resource.exist?
+    assert_equal 0, @resource.children.size
+
+  end
 
   private
 

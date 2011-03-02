@@ -81,6 +81,7 @@ module Bcms
           child_nodes.each do |node|
             child_resources << child_node(node)
           end
+          child_resources.compact!
           return child_resources
         else
           []
@@ -176,7 +177,9 @@ module Bcms
       end
 
       def child_node(section_node)
-        child_node = self.class.new(section_node.node.path, section_node.node.path, request, response, options.merge(:user => @user))
+        node_object = section_node.node
+        return nil if node_object && node_object.is_a?(Link)
+        child_node = self.class.new(node_object.path, node_object.path, request, response, options.merge(:user => @user))
         child_node.exist? # Force lookup of info from DB.
         child_node
       end
