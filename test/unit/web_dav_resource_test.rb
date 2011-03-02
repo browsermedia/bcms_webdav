@@ -15,6 +15,7 @@ class WebDavSectionResourceTest < ActiveSupport::TestCase
 
   end
 
+  
   test 'users with administrate permissions can access resources' do
     mock_user = mock()
     User.expects(:authenticate).with("abc", "123").returns(mock_user)
@@ -292,9 +293,35 @@ class FileResourceTest < ActiveSupport::TestCase
   test "parse missing slash section" do
     path = Bcms::WebDAV::Path.new('test.jpg')
     assert_equal "test.jpg", path.file_name
-
-
   end
+  
+  test "extract tempfile from mongrel style requests" do
+    tempfile = Tempfile.new("testing")
+    @request.expects(:body).returns(tempfile)
+
+    assert_equal tempfile, @resource.send(:extract_tempfile, @request)
+    
+  end
+
+  test "extract tempfile from passenger style requests" do
+    class FakeRewindable
+      def size
+        @rewindable_io = 'EXPECTED'
+      end
+      private
+
+      # Matches passengers rewindable input signature
+      def make_rewindable
+        'do nothing'
+      end
+    end
+
+    rewindable_input = FakeRewindable.new
+    @request.expects(:body).returns(rewindable_input)
+
+    assert_equal 'EXPECTED', @resource.send(:extract_tempfile, @request)
+  end
+
   private
   def resource_for(path)
     Bcms::WebDAV::Resource.new(path, path, @request, @response, {})

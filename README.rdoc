@@ -14,6 +14,8 @@ For more information on WebDAV see: http://en.wikipedia.org/wiki/WebDAV
 * Users must have 'Administer CMS' permissions in order to access resources via WebDAV.
 * Users can use their normal cms username and password.
 
+Note: Currently this module is tested to work on Passenger and Mongrel. Other rack servers may work, but implementations for file upload differ slightly.
+
 === Clients
 
 In order to take advantage of this module, users will need a WebDAV client. Many FTP clients will support this, including:

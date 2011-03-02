@@ -125,13 +125,13 @@ module Bcms
 
       # Handle uploading file.
       def put(request, response)
+        temp_file = extract_tempfile(request)
 
-        temp_file = request.body
         add_rails_like_methods(temp_file)
 
         section = find_section_for(path)
 
-        file_block = FileBlock.new(:name=>path, :attachment_file=>request.body, :attachment_section => section, :attachment_file_path=>path, :publish_on_save=>true)
+        file_block = FileBlock.new(:name=>path, :attachment_file=>temp_file, :attachment_section => section, :attachment_file_path=>path, :publish_on_save=>true)
         unless file_block.save
           log "Couldn't save file."
           file_block.errors.each do |error|
@@ -153,6 +153,28 @@ module Bcms
       end
 
       private
+
+      # Different webservers have slightly different behavior for uploaded files.
+      #   1. Webrick/mongrel - body is a TempFile
+      #   2. Passenger - body is a PhusionPassenger::Utils::RewindableInput
+      #
+      # Until Rails 3, which may have a consistent middleware for extracting a Tempfile, we have to do it this way.
+      def extract_tempfile(request)
+        input = request.body
+        if input
+          # Handle Mongrel
+          return input if input.is_a?(Tempfile)
+
+          # Handle Passenger
+          # This is highly brittle and terrible.
+          if input.respond_to?(:make_rewindable, true)
+            input.size # Force creation of Tempfile
+            return input.instance_variable_get(:@rewindable_io)
+          end
+        end
+
+
+      end
 
       def log_exists(type, path)
         log "Resource of type '#{type}' with path '#{path}' exists."
