@@ -10,8 +10,18 @@ class AttachmentTest < ActiveSupport::TestCase
 
   end
 
-  test "Attachment should respond to 'path' just like pages and sections." do
-    a = Attachment.new(:file_path=>"/test.jpg")
-    assert_equal "/test.jpg", a.path
+  test "Attachment should respond to 'relative_path'" do
+    a = Cms::Attachment.new
+    assert a.respond_to?(:relative_path)
+  end
+  
+  test "Page should respond to 'relative_path'" do
+    a = Cms::Page.new
+    assert a.respond_to?(:relative_path)
+  end
+  
+  test "Section should respond to 'relative_path'" do
+    a = Cms::Section.new
+    assert a.respond_to?(:relative_path)
   end
 end

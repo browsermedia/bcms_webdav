@@ -26,7 +26,7 @@ module Bcms
 
       def authenticate(username, password)
         log "Authenticating user '#{username}'"
-        user = User.authenticate(username, password)
+        user = Cms::User.authenticate(username, password)
 
         unless user
           Rails.logger.error "Failed authentication attempt by user '#{username}'"
@@ -52,20 +52,20 @@ module Bcms
       # This should always be called by DAV4Rack controller before any other primary operation (get, put) on a resource.
       def exist?
         path_to_find = Resource.normalize_path(path)
-        @section = Section.with_path(path_to_find).first
+        @section = Cms::Section.with_path(path_to_find).first
 
         if have_section
           log_exists('section', path_to_find)
           @resource = @section if have_section
         end
 
-        @page = Page.with_path(path_to_find).first
+        @page = Cms::Page.with_path(path_to_find).first
         if have_page
           log_exists('page', path_to_find)
           @resource = @page
         end
 
-        @file = Attachment.find_by_file_path(path)
+        @file = Cms::Attachment.find_live_by_file_path(path)
         if have_file
           log_exists('file', path_to_find)
           @resource = @file
@@ -109,15 +109,15 @@ module Bcms
       end
 
       def content_length
-        have_file ? @resource.file_size : 0
+        have_file ? @resource.size : 0
       end
 
       def get(request, response)
         log "GET request for #{request.path}"
         if have_file
-          file_location = @resource.full_file_location
-          log "For attachment '#{@resource}' file location is '#{file_location}"
-          file = Bcms::WebDAV::File.new(file_location)
+          path_to_file = @resource.data.path
+          log "For attachment '#{@resource}' path to file is '#{path_to_file}"
+          file = Bcms::WebDAV::File.new(path_to_file)
           log "Sending file '#{file.path}'"
           response.body = file
         end
@@ -131,7 +131,7 @@ module Bcms
 
         section = find_section_for(path)
 
-        file_block = FileBlock.new(:name=>path, :attachment_file=>temp_file, :attachment_section => section, :attachment_file_path=>path, :publish_on_save=>true)
+        file_block = Cms::FileBlock.new(:name=>path, :attachment_file=>temp_file, :attachment_section => section, :attachment_file_path=>path, :publish_on_save=>true)
         unless file_block.save
           log "Couldn't save file."
           file_block.errors.each do |error|
@@ -149,7 +149,7 @@ module Bcms
         path_to_find = Resource.normalize_path(section_path)
 
         log "Section.path = #{path_to_find}"
-        Section.with_path(path_to_find).first
+        Cms::Section.with_path(path_to_find).first
       end
 
       private
@@ -200,8 +200,8 @@ module Bcms
 
       def child_node(section_node)
         node_object = section_node.node
-        return nil if node_object == nil || node_object.is_a?(Link)
-        child_node = self.class.new(node_object.path, node_object.path, request, response, options.merge(:user => @user))
+        return nil if node_object == nil || node_object.is_a?(Cms::Link)
+        child_node = self.class.new(node_object.relative_path, node_object.relative_path, request, response, options.merge(:user => @user))
         child_node.exist? # Force lookup of info from DB.
         child_node
       end
@@ -232,6 +232,10 @@ module Bcms
         @parts = scanned[0]
       end
 
+      def sanitize_file_path(path)
+        Cms::Attachment.sanitize_file_path(path)
+      end
+      
       def parts
         @parts
       end

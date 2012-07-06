@@ -23,12 +23,12 @@ In order to take advantage of this module, users will need a WebDAV client. Many
 * Transmit (Mac OS) -  http://panic.com/transmit/
 * CrossFTP Pro (Windows, etc) - http://www.crossftp.com/
 
-This module has been tested with both of the above client. In addition, operating systems support accessing WebDAV
+This module has been tested with both of the above clients. In addition, operating systems support accessing WebDAV
 servers via mounted drives. See: http://en.wikipedia.org/wiki/WebDAV for more discussion.
 
 === Installation
 
-Due to the dependancy on rack 1.1.0 or later, this gem only works with a Rails 2.3.11 project, so you may need to upgrade older rails projects before using.
+Due to the dependency on rack 1.1.0 or later, this gem only works with a Rails 2.3.11 project, so you may need to upgrade older rails projects before using.
 
     gem install bcms_webdav
 

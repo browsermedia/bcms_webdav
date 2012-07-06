@@ -1,0 +1,3 @@
+Installs bcms_webdav into a project. Typically invoked indirectly via:
+
+   rails generate cms:install bcms_webdav
