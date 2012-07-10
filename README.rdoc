@@ -28,28 +28,25 @@ servers via mounted drives. See: http://en.wikipedia.org/wiki/WebDAV for more di
 
 === Installation
 
-Due to the dependency on rack 1.1.0 or later, this gem only works with a Rails 2.3.11 project, so you may need to upgrade older rails projects before using.
+	$ gem install bcms_webdav
+    $ rails g cms:install bcms_webdav
 
-    gem install bcms_webdav
+In your config/environments/development.rb, add the following:
 
-Add the gem to your project.
-
-    # config/environment.rb
-    config.gem 'dav4rack'
-    config.gem 'bcms_webdav'
-
-Add the following file to your project.
-
-    # config/initializers/bcms_webdav.rb
-    Rails.configuration.middleware.use Bcms::WebDavMiddleware, :port=>3001
+    config.middleware.use Bcms::WebDavMiddleware, :port=>3001
 
 This configures the WebDAV server to listen on port 3001 for WeDAV requests in development. To access the WebDAV API,
 you will need to start another rails server instance like so:
 
     script/server --port=3001
 
-In production, a subdomain should be used rather than a port. You will need to configure another subdomain on your webserver, much like the cms.
-subdomain is used for the admin interface. The default subdomain is 'webdav'. Here's an example apache config file, with a new subdomain configured:
+==== For production
+
+In your production.rb, add the following:
+
+		config.middleware.use Bcms::WebDavMiddleware
+		
+In production, a subdomain should be used rather than a port. You will need to configure another subdomain on your webserver, much like the cms. subdomain is used for the admin interface. The default subdomain is 'webdav'. Here's an example apache config file, with a new subdomain configured:
 
      <VirtualHost *:80>
       ServerName webdav.mysite.com
@@ -70,8 +67,7 @@ This means there should be a total of three domains in place for a site in produ
 
 You can change the subdomain that this module listens for requests on via:
 
-    # config/initializers/bcms_webdav.rb
-    Rails.configuration.middleware.use Bcms::WebDavMiddleware, :port=>3001, :subdomain=>"dav"
+    config.middleware.use Bcms::WebDavMiddleware, :port=>3001, :subdomain=>"dav"
 
 This would change the subdomain from 'webdav' to 'dav'. This webserver config file would also need to be changed as well.
 
@@ -84,8 +80,7 @@ make 'webdav.localhost' map to your local development environment, like so:
 
 Then configure the module so its no longer listening on port 3001, like so:
 
-    # config/initializers/bcms_webdav.rb
-    Rails.configuration.middleware.use Bcms::WebDavMiddleware
+    config.middleware.use Bcms::WebDavMiddleware
 
 Now you can make web requests to localhost:3000 and WebDAV requests to webdav.localhost:3000
 
@@ -103,6 +98,7 @@ This is an incomplete implementation of WebDAV, so many operations are not expli
 * All content_types are set to 'application/octet-stream' regardless of their actual type.
 * Links do not appear in the list of content items returned.
 * Uploading a file with a space in it will not replace the existing file. Since we convert spaces into _, they are treated as two separate resources.
+* Refactoring to avoid the need for configuring the middleware is possible. Engines can self setup middleware now.
 
 === Performance
 

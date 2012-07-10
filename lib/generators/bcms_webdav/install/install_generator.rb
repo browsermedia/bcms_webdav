@@ -1,12 +1,11 @@
 require 'cms/module_installation'
 
 class BcmsWebdav::InstallGenerator < Cms::ModuleInstallation
-  add_migrations_directory_to_source_root __FILE__
+  # add_migrations_directory_to_source_root __FILE__
   
-  
-  def copy_migrations
-    rake 'bcms_webdav:install:migrations'
-  end
+  # def copy_migrations
+  #     rake 'bcms_webdav:install:migrations'
+  #   end
 
   # Uncomment to add module specific seed data to a project.
   #def add_seed_data_to_project

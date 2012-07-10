@@ -122,12 +122,12 @@ module Bcms
       end
 
       def get(request, response)
-        log "GET request for #{request.path}"
+        # log "GET request for #{request.path}"
         if have_file
           path_to_file = @resource.data.path
-          log "For attachment '#{@resource}' path to file is '#{path_to_file}"
+          # log "For attachment '#{@resource}' path to file is '#{path_to_file}"
           file = Bcms::WebDAV::File.new(path_to_file)
-          log "Sending file '#{file.path}'"
+          log "Sending file '#{path_to_file}'"
           response.body = file
         end
       end
@@ -135,7 +135,6 @@ module Bcms
       # Handle uploading file.
       def put(request, response)
         temp_file = extract_tempfile(request)
-        # add_rails_like_methods(temp_file)
         section = find_section_for(path)
 
         file_block = Cms::FileBlock.new(:name=>path, :publish_on_save=>true)
@@ -177,76 +176,29 @@ module Bcms
       end
       
       def find_section_for(path)
-        log "Looking up section for path '#{path}'"
         path_obj = Path.new(path)
         section_path = path_obj.path_without_filename
         path_to_find = Resource.normalize_path(section_path)
-
-        log "Section.path = '#{path_to_find}'"
         Cms::Section.with_path(path_to_find).first
       end
 
       private
 
-      # Different webservers have slightly different behavior for uploaded files.
-      #   1. Webrick/mongrel - body is a TempFile
-      #   2. Passenger - body is a PhusionPassenger::Utils::RewindableInput
-      #
-      # Until Rails 3, which may have a consistent middleware for extracting a Tempfile, we have to do it this way.
+      # Save and return the tempfile. This is slightly duplicative of how Rack/Rails save a tempfile, then Paperclip automatically 
+      # handles copying it. In our case, since WebDAV isn't like a form multipart upload, we have to explicitly save it 
+      # rather than having Rails implicitly handle this for us.
       def extract_tempfile(request)
-        # input = request.body
-        # t = input.to_tempfile
-        # log "#{request.inspect}"
-        # up = Rack::Multipart::Parser.new(request).parse
-        # log "#{up.inspect}"
-        # up = ActionDispatch::Http::UploadedFile.new(request)
-        # log "Request #{request.inspect}"
+
         uploaded_file = Paperclip.io_adapters.for(request.body)
         uploaded_path = Path.new(path)
         uploaded_file.original_filename = uploaded_path.file_name
         uploaded_file.content_type = 'application/octet-stream'
-        
-        log "Tempfile? #{uploaded_file.inspect}"
-        # log "Input is #{input}"
         uploaded_file
-        # log "Request is #{request.inspect}"
-##        log "params #{request.params}"
-        # if input
-        #           # Handle Mongrel
-        #           return input if input.is_a?(Tempfile)
-        # 
-        #           # Handle Passenger
-        #           # This is highly brittle and terrible.
-        #           if input.respond_to?(:make_rewindable, true)
-        #             input.size # Force creation of Tempfile
-        #             return input.instance_variable_get(:@rewindable_io)
-        #           end
-        #         end
-
-
       end
 
       def log_exists(type, path)
         log "Resource of type '#{type}' with path '#{path}' exists."
       end
-
-      # Make this TempFile object act like a RailsTempFile
-      # def add_rails_like_methods(temp_file)
-      #         # For the purposes of Rails 2, this will have to do. Rails 3 make this much easier by providing additional
-      #         # Rack processors for ActionDispatch::Http::UploadedFile which makes this unncessary.
-      # 
-      #         def temp_file.content_type
-      #           'application/octet-stream'
-      #         end
-      # 
-      #         def temp_file.original_filename
-      #           path
-      #         end
-      # 
-      #         def temp_file.local_path
-      #           self.path
-      #         end
-      #       end
 
       def child_node(section_node)
         node_object = section_node.node

@@ -261,10 +261,10 @@ module Cms
     
     test "Getting a file" do
       mock_rack_file = mock()
-      mock_rack_file.expects(:path).returns("/usr/somewhere.txt").at_least_once
+      # mock_rack_file.expects(:path).returns("/usr/somewhere.txt").at_least_once
       Bcms::WebDAV::File.expects(:new).with(@file_block.file.path).returns(mock_rack_file)
 
-      @request.expects(:path).returns("/about-us/test.jpg").at_least_once
+      # @request.expects(:path).returns("/about-us/test.jpg").at_least_once
       @response.expects(:body=).with(mock_rack_file)
 
       @resource.get(@request, @response)

@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.description = %q{Turns a BrowserCMS site into a WebDAV server, allowing access for bulk uploading files.}
   s.email = %q{github@browsermedia.com}
   
-  s.extra_rdoc_files = ["README.markdown"]
+  s.extra_rdoc_files = ["README.rdoc"]
 
   s.files = Dir["{app,config,db,lib}/**/*"]
   s.files += Dir["Gemfile", "LICENSE.txt", "COPYRIGHT.txt", "GPL.txt" ]
