@@ -140,7 +140,12 @@ module Bcms
 
         file_block = Cms::FileBlock.new(:name=>path, :publish_on_save=>true)
         file_block.attachments.build(:data => temp_file, :attachment_name => 'file', :parent => section, :data_file_path => path)
-
+        
+        # Ensure the file pointer is at the beginning so Paperclip can copy after the block is saved.
+        # Something in assigning the tempfile to the Block is not correctly rewinding the file.
+        # Not doing this causes an empty file to be saved in uploads directory.
+        temp_file.rewind
+        
         unless file_block.save
           log "Couldn't save file."
           file_block.errors.each do |error|
