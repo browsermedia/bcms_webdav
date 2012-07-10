@@ -23,8 +23,6 @@ end
 APP_RAKEFILE = File.expand_path("../test/dummy/Rakefile", __FILE__)
 load 'rails/tasks/engine.rake'
 
-
-
 Bundler::GemHelper.install_tasks
 
 require 'rake/testtask'
@@ -36,5 +34,12 @@ Rake::TestTask.new(:test => 'app:test:prepare') do |t|
   t.verbose = false
 end
 
+Rake::TestTask.new('test:single' => 'app:test:prepare') do |t|
+  name = 'web_dav_resource_test'
+  t.libs << 'lib'
+  t.libs << 'test'
+  t.pattern = "test/**/#{name}.rb"
+  t.verbose = false
+end
 
 task :default => :test

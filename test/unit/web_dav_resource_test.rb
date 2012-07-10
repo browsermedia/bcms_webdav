@@ -220,6 +220,16 @@ module Cms
       assert_equal true, @resource.exist?
     end
 
+    test 'parent memoizes results (to avoid repeated db lookups)' do
+      assert @resource.parent.equal?(@resource.parent), "Calls to #parent should return the same object, so that it can be loaded once"
+    end
+    
+    test 'parent_exists?' do
+      assert_equal true, @resource.parent_exists?, "PUT requests check parent_exists as of DAV4rack 0.2.10"
+      parent = @resource.parent
+      assert_equal true, parent.collection?
+    end
+    
     test "creation_date" do
       assert @file_block.created_at - @resource.creation_date <= 100, "Ensure the times are close"
     end
@@ -298,32 +308,33 @@ module Cms
       assert_equal "test.jpg", path.file_name
     end
   
-    test "extract tempfile from mongrel style requests" do
-      tempfile = Tempfile.new("testing")
-      @request.expects(:body).returns(tempfile)
-
-      assert_equal tempfile, @resource.send(:extract_tempfile, @request)
-    
-    end
-
-    test "extract tempfile from passenger style requests" do
-      class FakeRewindable
-        def size
-          @rewindable_io = 'EXPECTED'
-        end
-        private
-
-        # Matches passengers rewindable input signature
-        def make_rewindable
-          'do nothing'
-        end
-      end
-
-      rewindable_input = FakeRewindable.new
-      @request.expects(:body).returns(rewindable_input)
-
-      assert_equal 'EXPECTED', @resource.send(:extract_tempfile, @request)
-    end
+    # Should no longer be necessary since we are using Paperclip to process attachments.
+    # test "extract tempfile from mongrel style requests" do
+    #      tempfile = Tempfile.new("testing")
+    #      @request.expects(:body).returns(tempfile)
+    # 
+    #      assert_equal tempfile, @resource.send(:extract_tempfile, @request)
+    #    
+    #    end
+    # 
+    #    test "extract tempfile from passenger style requests" do
+    #      class FakeRewindable
+    #        def size
+    #          @rewindable_io = 'EXPECTED'
+    #        end
+    #        private
+    # 
+    #        # Matches passengers rewindable input signature
+    #        def make_rewindable
+    #          'do nothing'
+    #        end
+    #      end
+    # 
+    #      rewindable_input = FakeRewindable.new
+    #      @request.expects(:body).returns(rewindable_input)
+    # 
+    #      assert_equal 'EXPECTED', @resource.send(:extract_tempfile, @request)
+    #    end
 
     private
     def resource_for(path)

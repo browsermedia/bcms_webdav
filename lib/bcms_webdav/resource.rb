@@ -73,7 +73,14 @@ module Bcms
 
         have_section || have_page || have_file
       end
-
+      
+      # Find the parent resource. We cache the result here so it can be loaded from the DB properly.
+      def parent
+        return @parent if @parent
+        @parent = super
+        @parent
+      end
+    
       def children
         if exist?
           child_nodes = @section.child_nodes
@@ -88,12 +95,14 @@ module Bcms
         end
       end
 
+      # 1 year ago handles missing files (which is hopefully a temporary bug while trying to upgrade to CMS 3.5)
       def creation_date
-        @resource.created_at
+        @resource ? @resource.created_at : 1.year.ago
       end
 
       def last_modified
-        @resource.created_at if exist?
+        return @resource.created_at if exist?
+        1.year.ago
       end
 
       def collection?
@@ -126,29 +135,37 @@ module Bcms
       # Handle uploading file.
       def put(request, response)
         temp_file = extract_tempfile(request)
-
-        add_rails_like_methods(temp_file)
-
+        # add_rails_like_methods(temp_file)
         section = find_section_for(path)
 
-        file_block = Cms::FileBlock.new(:name=>path, :attachment_file=>temp_file, :attachment_section => section, :attachment_file_path=>path, :publish_on_save=>true)
+        file_block = Cms::FileBlock.new(:name=>path, :publish_on_save=>true)
+        file_block.attachments.build(:data => temp_file, :attachment_name => 'file', :parent => section, :data_file_path => path)
+
         unless file_block.save
           log "Couldn't save file."
           file_block.errors.each do |error|
             log error
           end
-          return
+          work_around_dav4rack_bug
+          return InternalServerError
         end
-        OK
+        Created
       end
 
+      # If Created isn't returned, dav4rack controller will set the body to nil, which will cause Rack to blow up.
+      # i.e. response.body = response['Location'] but 'Location' is only set if Created == true
+      # See https://github.com/chrisroberts/dav4rack/blob/master/lib/dav4rack/controller.rb#put
+      def work_around_dav4rack_bug
+        response['Location'] = ''
+      end
+      
       def find_section_for(path)
-        log "Looking up section for path '#{path}"
+        log "Looking up section for path '#{path}'"
         path_obj = Path.new(path)
         section_path = path_obj.path_without_filename
         path_to_find = Resource.normalize_path(section_path)
 
-        log "Section.path = #{path_to_find}"
+        log "Section.path = '#{path_to_find}'"
         Cms::Section.with_path(path_to_find).first
       end
 
@@ -160,18 +177,34 @@ module Bcms
       #
       # Until Rails 3, which may have a consistent middleware for extracting a Tempfile, we have to do it this way.
       def extract_tempfile(request)
-        input = request.body
-        if input
-          # Handle Mongrel
-          return input if input.is_a?(Tempfile)
-
-          # Handle Passenger
-          # This is highly brittle and terrible.
-          if input.respond_to?(:make_rewindable, true)
-            input.size # Force creation of Tempfile
-            return input.instance_variable_get(:@rewindable_io)
-          end
-        end
+        # input = request.body
+        # t = input.to_tempfile
+        # log "#{request.inspect}"
+        # up = Rack::Multipart::Parser.new(request).parse
+        # log "#{up.inspect}"
+        # up = ActionDispatch::Http::UploadedFile.new(request)
+        # log "Request #{request.inspect}"
+        uploaded_file = Paperclip.io_adapters.for(request.body)
+        uploaded_path = Path.new(path)
+        uploaded_file.original_filename = uploaded_path.file_name
+        uploaded_file.content_type = 'application/octet-stream'
+        
+        log "Tempfile? #{uploaded_file.inspect}"
+        # log "Input is #{input}"
+        uploaded_file
+        # log "Request is #{request.inspect}"
+##        log "params #{request.params}"
+        # if input
+        #           # Handle Mongrel
+        #           return input if input.is_a?(Tempfile)
+        # 
+        #           # Handle Passenger
+        #           # This is highly brittle and terrible.
+        #           if input.respond_to?(:make_rewindable, true)
+        #             input.size # Force creation of Tempfile
+        #             return input.instance_variable_get(:@rewindable_io)
+        #           end
+        #         end
 
 
       end
@@ -181,22 +214,22 @@ module Bcms
       end
 
       # Make this TempFile object act like a RailsTempFile
-      def add_rails_like_methods(temp_file)
-        # For the purposes of Rails 2, this will have to do. Rails 3 make this much easier by providing additional
-        # Rack processors for ActionDispatch::Http::UploadedFile which makes this unncessary.
-
-        def temp_file.content_type
-          'application/octet-stream'
-        end
-
-        def temp_file.original_filename
-          path
-        end
-
-        def temp_file.local_path
-          self.path
-        end
-      end
+      # def add_rails_like_methods(temp_file)
+      #         # For the purposes of Rails 2, this will have to do. Rails 3 make this much easier by providing additional
+      #         # Rack processors for ActionDispatch::Http::UploadedFile which makes this unncessary.
+      # 
+      #         def temp_file.content_type
+      #           'application/octet-stream'
+      #         end
+      # 
+      #         def temp_file.original_filename
+      #           path
+      #         end
+      # 
+      #         def temp_file.local_path
+      #           self.path
+      #         end
+      #       end
 
       def child_node(section_node)
         node_object = section_node.node
