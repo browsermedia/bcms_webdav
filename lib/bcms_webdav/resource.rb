@@ -157,6 +157,18 @@ module Bcms
         Created
       end
 
+
+      # Ensures path is encoded. In most cases, an encoded path may occur after uploading a file (PUT) with special characters in it.
+      def public_path
+        p = super
+        begin
+          URI(p)
+        rescue URI::InvalidURIError
+          return URI.escape(p)
+        end
+        p
+      end
+      
       # If Created isn't returned, dav4rack controller will set the body to nil, which will cause Rack to blow up.
       # i.e. response.body = response['Location'] but 'Location' is only set if Created == true
       # See https://github.com/chrisroberts/dav4rack/blob/master/lib/dav4rack/controller.rb#put

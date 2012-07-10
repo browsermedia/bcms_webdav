@@ -102,8 +102,10 @@ This is an incomplete implementation of WebDAV, so many operations are not expli
 * All files are uploaded as 'FileBlocks', regardless of whether they are images or not.
 * All content_types are set to 'application/octet-stream' regardless of their actual type.
 * Links do not appear in the list of content items returned.
+* Uploading a file with a space in it will not replace the existing file. Since we convert spaces into _, they are treated as two separate resources.
 
 === Performance
 
 This module almost certainly needs performance testing when dealing with larger sites. Certain FTP clients will make more requests for
 resources than others. (CrossFTP seems 'chattier' than Transmit for instance).
+

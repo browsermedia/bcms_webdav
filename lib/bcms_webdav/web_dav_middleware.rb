@@ -6,7 +6,7 @@ module Bcms
 
     def initialize(app, options={})
       @app = app
-      @dav4rack = DAV4Rack::Handler.new(:root => Rails.root.to_s, :root_uri_path => '/', :resource_class=>Bcms::WebDAV::Resource)
+      @dav4rack = DAV4Rack::Handler.new(:root => Rails.root.to_s, :root_uri_path => '/', :log_to => ["#{Rails.root}/log/webdav.log", Logger::DEBUG], :resource_class=>Bcms::WebDAV::Resource)
       @options = options
 
       unless @options[:subdomain]

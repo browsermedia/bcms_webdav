@@ -151,6 +151,7 @@ module Cms
       assert_equal nil, @resource.send(:child_node, SectionNode.new(:section=>@about_us, :node=>nil))
     end
 
+
     private
 
     def resource_for(path)
@@ -187,7 +188,6 @@ module Cms
       assert_equal false, @resource.collection?
     end
 
-
     private
     def resource_for(path)
       Bcms::WebDAV::Resource.new(path, path, @request, Rack::MockResponse.new(200, {}, []), {})
@@ -215,7 +215,7 @@ module Cms
       @resource.exist?
 
     end
-
+    
     test "exists" do
       assert_equal true, @resource.exist?
     end
@@ -250,6 +250,15 @@ module Cms
       assert_equal @file.content_type, @resource.content_type
     end
 
+    test "public_path" do
+      assert_equal("/about-us/test.jpg", @resource.public_path)
+    end
+    
+    test "public_path with spaces" do
+      r = resource_for("/about-us/Public Path.jpg") 
+      assert_equal('/about-us/Public%20Path.jpg', r.public_path)
+    end
+    
     test "Getting a file" do
       mock_rack_file = mock()
       mock_rack_file.expects(:path).returns("/usr/somewhere.txt").at_least_once
